@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assembly Schedule - Today</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            background: #ffffff;
+            color: #000000;
+            padding: 40px 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 400;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .date {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 32px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .error {
+            padding: 20px;
+            border: 1px solid #000;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+
+        .stats {
+            font-size: 14px;
+            margin-bottom: 20px;
+            color: #666;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th {
+            text-align: left;
+            font-weight: 500;
+            padding: 12px 16px;
+            border-bottom: 2px solid #000;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:hover {
+            background: #f8f8f8;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        #content {
+            display: none;
+        }
+
+        #content.visible {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Assembly Schedule</h1>
+        <div class="date" id="currentDate"></div>
+        
+        <div class="loading" id="loading">
+            Loading today's schedule...
+        </div>
+
+        <div id="content">
+            <div class="stats" id="stats"></div>
+            <div id="tableContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration - Update this URL after deploying to Railway
+        const API_SERVER_URL = 'http://localhost:3000'; // Change to your Railway URL: https://your-app.railway.app
+
+        // Display current date
+        function displayCurrentDate() {
+            const today = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('currentDate').textContent = today.toLocaleDateString('en-US', options);
+        }
+
+        // Download Excel file from proxy server
+        async function downloadFile() {
+            const response = await fetch(`${API_SERVER_URL}/api/download-schedule`);
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || `Failed to download file: ${response.status} ${response.statusText}`);
+            }
+
+            return await response.arrayBuffer();
+        }
+
+        // Parse Excel file
+        function parseExcel(arrayBuffer) {
+            const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const data = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+            return data;
+        }
+
+        // Get today's date in various formats for matching
+        function getTodayDateFormats() {
+            const today = new Date();
+            return {
+                date: today,
+                mmddyyyy: `${(today.getMonth() + 1).toString().padStart(2, '0')}/${today.getDate().toString().padStart(2, '0')}/${today.getFullYear()}`,
+                mmdyyyy: `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()}`,
+                excelSerial: Math.floor((today - new Date(1899, 11, 30)) / (24 * 60 * 60 * 1000))
+            };
+        }
+
+        // Parse date from various formats
+        function parseDate(dateValue) {
+            if (!dateValue) return null;
+
+            // If it's already a Date object
+            if (dateValue instanceof Date) return dateValue;
+
+            // If it's an Excel serial number (number)
+            if (typeof dateValue === 'number') {
+                return new Date((dateValue - 25569) * 86400 * 1000);
+            }
+
+            // If it's a string
+            if (typeof dateValue === 'string') {
+                const parsed = new Date(dateValue);
+                if (!isNaN(parsed.getTime())) return parsed;
+            }
+
+            return null;
+        }
+
+        // Check if two dates are the same day
+        function isSameDay(date1, date2) {
+            return date1.getFullYear() === date2.getFullYear() &&
+                   date1.getMonth() === date2.getMonth() &&
+                   date1.getDate() === date2.getDate();
+        }
+
+        // Filter and display data
+        function displayData(data) {
+            if (data.length === 0) {
+                showNoData('No data found in file');
+                return;
+            }
+
+            // First row is headers
+            const headers = data[0];
+            const rows = data.slice(1);
+
+            // Find column indices
+            const dateIdx = headers.findIndex(h => h && h.toString().toLowerCase().includes('date'));
+            const dayIdx = headers.findIndex(h => h && h.toString().toLowerCase().includes('day'));
+            const orderIdx = headers.findIndex(h => h && h.toString().toLowerCase().includes('order'));
+            const customerIdx = headers.findIndex(h => h && h.toString().toLowerCase().includes('customer'));
+            const cabinetQtyIdx = headers.findIndex(h => h && (h.toString().toLowerCase().includes('cabinet') && h.toString().toLowerCase().includes('qty')));
+            const warehouseIdx = headers.findIndex(h => h && h.toString().toLowerCase().includes('warehouse'));
+            const statusIdx = headers.findIndex(h => h && h.toString().toLowerCase().includes('status'));
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            // Filter rows for today
+            const todaysOrders = rows.filter(row => {
+                const dateValue = row[dateIdx];
+                const parsedDate = parseDate(dateValue);
+                return parsedDate && isSameDay(parsedDate, today);
+            });
+
+            if (todaysOrders.length === 0) {
+                showNoData('No orders scheduled for today');
+                return;
+            }
+
+            // Create table
+            let tableHTML = '<table>';
+            tableHTML += '<thead><tr>';
+            tableHTML += '<th>Date</th>';
+            tableHTML += '<th>Day</th>';
+            tableHTML += '<th>Order #</th>';
+            tableHTML += '<th>Customer</th>';
+            tableHTML += '<th>Cabinet Qty</th>';
+            tableHTML += '<th>Warehouse</th>';
+            tableHTML += '<th>Status</th>';
+            tableHTML += '</tr></thead><tbody>';
+
+            todaysOrders.forEach(row => {
+                const date = parseDate(row[dateIdx]);
+                const dateStr = date ? date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : '';
+                
+                tableHTML += '<tr>';
+                tableHTML += `<td>${dateStr}</td>`;
+                tableHTML += `<td>${row[dayIdx] || ''}</td>`;
+                tableHTML += `<td>${row[orderIdx] || ''}</td>`;
+                tableHTML += `<td>${row[customerIdx] || ''}</td>`;
+                tableHTML += `<td>${row[cabinetQtyIdx] || ''}</td>`;
+                tableHTML += `<td>${row[warehouseIdx] || ''}</td>`;
+                tableHTML += `<td>${row[statusIdx] || ''}</td>`;
+                tableHTML += '</tr>';
+            });
+
+            tableHTML += '</tbody></table>';
+
+            document.getElementById('stats').textContent = `${todaysOrders.length} order${todaysOrders.length !== 1 ? 's' : ''} scheduled for today`;
+            document.getElementById('tableContainer').innerHTML = tableHTML;
+            showContent();
+        }
+
+        function showNoData(message) {
+            document.getElementById('tableContainer').innerHTML = `<div class="no-data">${message}</div>`;
+            showContent();
+        }
+
+        function showContent() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('content').classList.add('visible');
+        }
+
+        function showError(message) {
+            document.getElementById('loading').innerHTML = `<div class="error">Error: ${message}</div>`;
+        }
+
+        // Main execution
+        async function main() {
+            displayCurrentDate();
+
+            try {
+                // Step 1: Download file from proxy server
+                const fileData = await downloadFile();
+
+                // Step 2: Parse Excel
+                const data = parseExcel(fileData);
+
+                // Step 3: Display filtered data
+                displayData(data);
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message);
+            }
+        }
+
+        // Run on page load
+        window.addEventListener('DOMContentLoaded', main);
+    </script>
+</body>
+</html>
+
