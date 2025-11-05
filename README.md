@@ -1,16 +1,39 @@
-# Assembly Schedule Display System
+# Sunique Assembly Schedule - Warehouse TV Display
 
-A two-component system for displaying today's assembly schedule from SharePoint:
-- **Node.js Proxy Server**: Handles SharePoint authentication and file downloads
-- **HTML Client**: Displays the schedule in a clean, minimalist interface
+A warehouse TV display system showing today's assembly schedule for workers. Features large, color-coded status indicators optimized for viewing from a distance, with Sunique branding.
+
+## System Components
+
+- **Node.js Proxy Server** (Railway): Handles SharePoint authentication and file downloads
+- **HTML Warehouse Display**: Large-format TV interface with real-time schedule updates
 
 ## Architecture
 
 ```
-HTML (Browser) → Node.js Server (Railway) → SharePoint/Microsoft Graph API
+TV Display (Browser) → Node.js Server (Railway) → SharePoint/Microsoft Graph API
 ```
 
-The proxy server is necessary to avoid CORS issues and keep credentials secure.
+The proxy server avoids CORS issues and keeps credentials secure.
+
+## Features
+
+✨ **Warehouse-Optimized Display**
+- Large, easy-to-read fonts (28-48px) for TV viewing
+- Color-coded status badges:
+  - 🟢 **ASSEMBLING** - Green, pulsing animation
+  - 🟡 **SCHEDULED** - Orange/yellow
+  - ⚫ **FINISHED** - Gray
+- Sunique brand colors and logo integration
+
+✨ **Real-Time Updates**
+- Automatically displays only today's orders
+- Shows order count, customer names, cabinet quantities
+- Warehouse-specific information
+
+✨ **TV-Ready Design**
+- Optimized for 1920x1080, 1366x768, and other common TV resolutions
+- High contrast design with gradient backgrounds
+- Glassmorphism effects for modern look
 
 ## Deployment Instructions
 
@@ -96,6 +119,16 @@ npm start
 - `.env` - Local environment variables (not in git)
 - `env` - Template with credentials (rename to `.env` for local use)
 
+## Using the Warehouse Display
+
+1. **Open on TV Browser**: Navigate to the HTML file or host it on a web server
+2. **Full Screen Mode**: Press F11 for full-screen display
+3. **Auto-Refresh**: The page loads data on startup
+4. **Reading Status**:
+   - **Green pulsing badge** = Currently being assembled (priority)
+   - **Orange badge** = Scheduled to start
+   - **Gray badge** = Completed
+
 ## Troubleshooting
 
 **Error: "NetworkError when attempting to fetch resource"**
@@ -110,4 +143,13 @@ npm start
 **"No orders scheduled for today"**
 - This is normal if there are no orders for today's date
 - The system filters by exact date match
+
+## Design Specifications
+
+- **Background**: Sunique olive green gradient (#3d4528 → #515a36)
+- **Logo**: White Sunique logo (80px height)
+- **Primary Font Size**: 28-32px (table data)
+- **Status Badge Font**: 32px, bold, uppercase
+- **Order Count Badge**: 32px on glassmorphism background
+- **Responsive**: Scales for 4K (3840x2160), Full HD (1920x1080), and HD (1366x768)
 
