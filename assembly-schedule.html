@@ -96,34 +96,40 @@
             cursor: pointer;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
-            transition: all 0.3s ease;
+            min-width: 150px;
+            width: 150px;
+            height: 52px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
             box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
         }
 
-        .refresh-button:hover {
+        .refresh-button:hover:not(.loading) {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
         }
 
-        .refresh-button:active {
-            transform: translateY(0);
+        .refresh-button:active:not(.loading) {
+            transform: translateY(0); 
         }
 
         .refresh-button.loading {
             opacity: 0.7;
             cursor: not-allowed;
+            transform: none;
         }
 
         .refresh-icon {
             font-size: 20px;
             display: inline-block;
             line-height: 1;
+            width: 20px;
+            height: 20px;
         }
 
         .refresh-button.loading .refresh-icon {
             animation: spin 1s linear infinite;
-            display: inline-block;
         }
 
         @keyframes spin {
@@ -193,70 +199,57 @@
 
         /* Status-based row colors */
         tbody tr {
-            background: transparent;
+            background: rgba(255, 255, 255, 0.95);
             color: #000000;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        tbody tr.row-assembling {
+            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+            border-left: 6px solid #10b981;
+        }
+
+        tbody tr.row-scheduled {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-left: 6px solid #f59e0b;
+        }
+
+        tbody tr.row-finished {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            border-left: 6px solid #6b7280;
+        }
+
+        tbody tr:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        tbody tr.row-assembling:hover {
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
+        }
+
+        tbody tr.row-scheduled:hover {
+            box-shadow: 0 10px 30px rgba(245, 158, 11, 0.4);
+        }
+
+        tbody tr.row-finished:hover {
+            box-shadow: 0 10px 30px rgba(107, 114, 128, 0.4);
         }
 
         td {
             padding: 15px 18px;
             font-weight: 600;
             font-size: 20px;
-            background: rgba(255, 255, 255, 0.95);
         }
 
-        /* Apply background colors to all cells in each row */
-        tbody tr.row-assembling td {
-            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-        }
-
-        tbody tr.row-assembling td:first-child {
-            border-left: 6px solid #10b981;
-        }
-
-        tbody tr.row-scheduled td {
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-        }
-
-        tbody tr.row-scheduled td:first-child {
-            border-left: 6px solid #f59e0b;
-        }
-
-        tbody tr.row-finished td {
-            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-        }
-
-        tbody tr.row-finished td:first-child {
-            border-left: 6px solid #6b7280;
-        }
-
-        /* Rounded corners on first and last cells */
         tbody tr td:first-child {
             border-radius: 10px 0 0 10px;
         }
 
         tbody tr td:last-child {
             border-radius: 0 10px 10px 0;
-        }
-
-        tbody tr:hover {
-            transform: scale(1.02);
-        }
-
-        tbody tr:hover td {
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        tbody tr.row-assembling:hover td {
-            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4);
-        }
-
-        tbody tr.row-scheduled:hover td {
-            box-shadow: 0 10px 30px rgba(245, 158, 11, 0.4);
-        }
-
-        tbody tr.row-finished:hover td {
-            box-shadow: 0 10px 30px rgba(107, 114, 128, 0.4);
         }
 
         /* Status Badges - BIG and COLORFUL */
