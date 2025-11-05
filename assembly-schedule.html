@@ -206,8 +206,6 @@
                 return;
             }
 
-            console.log('First 10 rows of data:', data.slice(0, 10));
-
             // Find the header row (look for row containing "Date" column)
             let headerRowIndex = -1;
             let headers = null;
@@ -221,7 +219,6 @@
                 if (hasDate && hasDay) {
                     headerRowIndex = i;
                     headers = row;
-                    console.log(`Found header row at index ${i}:`, headers);
                     break;
                 }
             }
@@ -237,9 +234,6 @@
                 return row.some(cell => cell !== null && cell !== undefined && cell !== '');
             });
 
-            console.log('Headers:', headers);
-            console.log('Data rows (after filtering empty):', rows.length);
-
             // Find column indices
             const dateIdx = headers.findIndex(h => h && h.toString().toLowerCase().trim() === 'date');
             const dayIdx = headers.findIndex(h => h && h.toString().toLowerCase().trim() === 'day');
@@ -249,28 +243,15 @@
             const warehouseIdx = headers.findIndex(h => h && h.toString().toLowerCase().includes('warehouse'));
             const statusIdx = headers.findIndex(h => h && h.toString().toLowerCase().includes('status'));
 
-            console.log('Column indices:', { dateIdx, dayIdx, orderIdx, customerIdx, cabinetQtyIdx, warehouseIdx, statusIdx });
-
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            console.log('Today:', today.toDateString());
 
             // Filter rows for today
-            let logCount = 0;
             const todaysOrders = rows.filter(row => {
                 const dateValue = row[dateIdx];
                 const parsedDate = parseDate(dateValue);
-                
-                // Only log first 5 rows to avoid console spam
-                if (logCount < 5) {
-                    console.log('Row date value:', dateValue, '-> Parsed:', parsedDate?.toDateString(), '-> Match:', parsedDate && isSameDay(parsedDate, today));
-                    logCount++;
-                }
-                
                 return parsedDate && isSameDay(parsedDate, today);
             });
-
-            console.log('Total orders for today:', todaysOrders.length);
 
             if (todaysOrders.length === 0) {
                 showNoData('No orders scheduled for today');
