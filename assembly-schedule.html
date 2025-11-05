@@ -113,7 +113,7 @@
 
     <script>
         // Configuration - Update this URL after deploying to Railway
-        const API_SERVER_URL = 'http://localhost:3000'; // Change to your Railway URL: https://your-app.railway.app
+        const API_SERVER_URL = 'https://sunique-assemble-display-production.up.railway.app'; // Change to your Railway URL: https://your-app.railway.app
 
         // Display current date
         function displayCurrentDate() {
@@ -136,9 +136,9 @@
 
         // Parse Excel file
         function parseExcel(arrayBuffer) {
-            const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+            const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
             const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            const data = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+            const data = XLSX.utils.sheet_to_json(firstSheet, { header: 1, raw: false, dateNF: 'mm/dd/yyyy' });
             return data;
         }
 
@@ -158,15 +158,33 @@
             if (!dateValue) return null;
 
             // If it's already a Date object
-            if (dateValue instanceof Date) return dateValue;
+            if (dateValue instanceof Date) {
+                return isNaN(dateValue.getTime()) ? null : dateValue;
+            }
 
             // If it's an Excel serial number (number)
             if (typeof dateValue === 'number') {
-                return new Date((dateValue - 25569) * 86400 * 1000);
+                const date = new Date((dateValue - 25569) * 86400 * 1000);
+                return isNaN(date.getTime()) ? null : date;
             }
 
             // If it's a string
             if (typeof dateValue === 'string') {
+                // Try to handle formats like "11/5/25" (MM/D/YY)
+                const parts = dateValue.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+                if (parts) {
+                    let year = parseInt(parts[3]);
+                    // If year is 2 digits, assume 2000s
+                    if (year < 100) {
+                        year += 2000;
+                    }
+                    const month = parseInt(parts[1]) - 1; // Month is 0-indexed
+                    const day = parseInt(parts[2]);
+                    const date = new Date(year, month, day);
+                    if (!isNaN(date.getTime())) return date;
+                }
+                
+                // Try standard parsing
                 const parsed = new Date(dateValue);
                 if (!isNaN(parsed.getTime())) return parsed;
             }
@@ -192,6 +210,9 @@
             const headers = data[0];
             const rows = data.slice(1);
 
+            console.log('Headers:', headers);
+            console.log('Total rows:', rows.length);
+
             // Find column indices
             const dateIdx = headers.findIndex(h => h && h.toString().toLowerCase().includes('date'));
             const dayIdx = headers.findIndex(h => h && h.toString().toLowerCase().includes('day'));
@@ -201,15 +222,21 @@
             const warehouseIdx = headers.findIndex(h => h && h.toString().toLowerCase().includes('warehouse'));
             const statusIdx = headers.findIndex(h => h && h.toString().toLowerCase().includes('status'));
 
+            console.log('Column indices:', { dateIdx, dayIdx, orderIdx, customerIdx, cabinetQtyIdx, warehouseIdx, statusIdx });
+
             const today = new Date();
             today.setHours(0, 0, 0, 0);
+            console.log('Today:', today.toDateString());
 
             // Filter rows for today
             const todaysOrders = rows.filter(row => {
                 const dateValue = row[dateIdx];
                 const parsedDate = parseDate(dateValue);
+                console.log('Row date value:', dateValue, '-> Parsed:', parsedDate?.toDateString(), '-> Match:', parsedDate && isSameDay(parsedDate, today));
                 return parsedDate && isSameDay(parsedDate, today);
             });
+
+            console.log('Total orders for today:', todaysOrders.length);
 
             if (todaysOrders.length === 0) {
                 showNoData('No orders scheduled for today');
