@@ -14,77 +14,208 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
-            background: #ffffff;
-            color: #000000;
-            padding: 40px 20px;
-            line-height: 1.6;
+            background: linear-gradient(135deg, #3d4528 0%, #515a36 100%);
+            color: #ffffff;
+            padding: 30px;
+            line-height: 1.4;
+            min-height: 100vh;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 100%;
             margin: 0 auto;
         }
 
-        h1 {
-            font-size: 24px;
-            font-weight: 400;
-            margin-bottom: 8px;
-            letter-spacing: -0.02em;
+        /* Header with Logo */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            padding: 20px 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo {
+            height: 80px;
+            width: auto;
+        }
+
+        .title-section h1 {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
         }
 
         .date {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 32px;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 60px 20px;
-            font-size: 14px;
-            color: #666;
-        }
-
-        .error {
-            padding: 20px;
-            border: 1px solid #000;
-            margin-bottom: 20px;
-            font-size: 14px;
+            font-size: 28px;
+            color: #ffffff;
+            opacity: 0.9;
         }
 
         .stats {
-            font-size: 14px;
-            margin-bottom: 20px;
-            color: #666;
+            font-size: 32px;
+            font-weight: 700;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px 30px;
+            border-radius: 50px;
+            backdrop-filter: blur(10px);
         }
 
+        /* Loading State */
+        .loading {
+            text-align: center;
+            padding: 100px 20px;
+            font-size: 36px;
+            color: #ffffff;
+        }
+
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+
+        .error {
+            padding: 30px;
+            background: #dc2626;
+            margin-bottom: 20px;
+            font-size: 24px;
+            border-radius: 10px;
+        }
+
+        /* Table Styles - TV Optimized */
         table {
             width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
+            border-collapse: separate;
+            border-spacing: 0 15px;
+            font-size: 28px;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
 
         th {
             text-align: left;
-            font-weight: 500;
-            padding: 12px 16px;
-            border-bottom: 2px solid #000;
+            font-weight: 700;
+            padding: 20px 25px;
+            background: linear-gradient(135deg, #515a36 0%, #6b7444 100%);
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 24px;
+        }
+
+        th:first-child {
+            border-radius: 10px 0 0 10px;
+        }
+
+        th:last-child {
+            border-radius: 0 10px 10px 0;
+        }
+
+        tbody tr {
+            background: rgba(255, 255, 255, 0.95);
+            color: #000000;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        tbody tr:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
         }
 
         td {
-            padding: 12px 16px;
-            border-bottom: 1px solid #e0e0e0;
+            padding: 25px 25px;
+            font-weight: 600;
+            font-size: 30px;
         }
 
-        tr:hover {
-            background: #f8f8f8;
+        td:first-child {
+            border-radius: 10px 0 0 10px;
         }
 
+        td:last-child {
+            border-radius: 0 10px 10px 0;
+        }
+
+        /* Status Badges - BIG and COLORFUL */
+        .status-badge {
+            display: inline-block;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 900;
+            font-size: 32px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            min-width: 200px;
+        }
+
+        .status-assembling {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: #ffffff;
+            animation: pulse 2s infinite;
+        }
+
+        .status-scheduled {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #ffffff;
+        }
+
+        .status-finished {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            color: #ffffff;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 6px 25px rgba(16, 185, 129, 0.6);
+            }
+        }
+
+        /* Warehouse Column */
+        .warehouse-badge {
+            background: linear-gradient(135deg, #515a36 0%, #6b7444 100%);
+            color: #ffffff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        /* No Data State */
         .no-data {
             text-align: center;
-            padding: 60px 20px;
-            font-size: 14px;
-            color: #666;
+            padding: 100px 20px;
+            font-size: 42px;
+            color: #ffffff;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
         }
 
         #content {
@@ -94,19 +225,45 @@
         #content.visible {
             display: block;
         }
+
+        /* Responsive for different TV sizes */
+        @media (max-width: 1920px) {
+            .title-section h1 { font-size: 42px; }
+            .date { font-size: 24px; }
+            .stats { font-size: 28px; }
+            table { font-size: 24px; }
+            td { font-size: 26px; }
+            .status-badge { font-size: 28px; min-width: 180px; }
+        }
+
+        @media (max-width: 1366px) {
+            .title-section h1 { font-size: 36px; }
+            .date { font-size: 20px; }
+            .stats { font-size: 24px; }
+            table { font-size: 20px; }
+            td { font-size: 22px; }
+            .status-badge { font-size: 24px; min-width: 160px; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Assembly Schedule</h1>
-        <div class="date" id="currentDate"></div>
+        <div class="header">
+            <div class="logo-section">
+                <img src="img/logo.png" alt="Sunique Logo" class="logo">
+                <div class="title-section">
+                    <h1>Today's Assembly Schedule</h1>
+                    <div class="date" id="currentDate"></div>
+                </div>
+            </div>
+            <div class="stats" id="stats"></div>
+        </div>
         
         <div class="loading" id="loading">
-            Loading today's schedule...
+            Loading schedule
         </div>
 
         <div id="content">
-            <div class="stats" id="stats"></div>
             <div id="tableContainer"></div>
         </div>
     </div>
@@ -258,11 +415,19 @@
                 return;
             }
 
+            // Helper function to get status badge class
+            function getStatusClass(status) {
+                if (!status) return '';
+                const statusLower = status.toString().toLowerCase();
+                if (statusLower.includes('assembling')) return 'status-assembling';
+                if (statusLower.includes('scheduled')) return 'status-scheduled';
+                if (statusLower.includes('finished')) return 'status-finished';
+                return '';
+            }
+
             // Create table
             let tableHTML = '<table>';
             tableHTML += '<thead><tr>';
-            tableHTML += '<th>Date</th>';
-            tableHTML += '<th>Day</th>';
             tableHTML += '<th>Order #</th>';
             tableHTML += '<th>Customer</th>';
             tableHTML += '<th>Cabinet Qty</th>';
@@ -271,28 +436,28 @@
             tableHTML += '</tr></thead><tbody>';
 
             todaysOrders.forEach(row => {
-                const date = parseDate(row[dateIdx]);
-                const dateStr = date ? date.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' }) : '';
+                const status = row[statusIdx] || '';
+                const warehouse = row[warehouseIdx] || '';
+                const statusClass = getStatusClass(status);
                 
                 tableHTML += '<tr>';
-                tableHTML += `<td>${dateStr}</td>`;
-                tableHTML += `<td>${row[dayIdx] || ''}</td>`;
-                tableHTML += `<td>${row[orderIdx] || ''}</td>`;
+                tableHTML += `<td><strong>${row[orderIdx] || ''}</strong></td>`;
                 tableHTML += `<td>${row[customerIdx] || ''}</td>`;
-                tableHTML += `<td>${row[cabinetQtyIdx] || ''}</td>`;
-                tableHTML += `<td>${row[warehouseIdx] || ''}</td>`;
-                tableHTML += `<td>${row[statusIdx] || ''}</td>`;
+                tableHTML += `<td><strong>${row[cabinetQtyIdx] || ''}</strong></td>`;
+                tableHTML += `<td><span class="warehouse-badge">${warehouse}</span></td>`;
+                tableHTML += `<td><span class="status-badge ${statusClass}">${status}</span></td>`;
                 tableHTML += '</tr>';
             });
 
             tableHTML += '</tbody></table>';
 
-            document.getElementById('stats').textContent = `${todaysOrders.length} order${todaysOrders.length !== 1 ? 's' : ''} scheduled for today`;
+            document.getElementById('stats').textContent = `${todaysOrders.length} ${todaysOrders.length === 1 ? 'Order' : 'Orders'}`;
             document.getElementById('tableContainer').innerHTML = tableHTML;
             showContent();
         }
 
         function showNoData(message) {
+            document.getElementById('stats').textContent = '0 Orders';
             document.getElementById('tableContainer').innerHTML = `<div class="no-data">${message}</div>`;
             showContent();
         }
@@ -300,6 +465,7 @@
         function showContent() {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('content').classList.add('visible');
+            document.getElementById('stats').style.display = 'block';
         }
 
         function showError(message) {
