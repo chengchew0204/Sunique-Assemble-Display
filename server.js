@@ -60,43 +60,45 @@ async function getAccessToken() {
     return data.access_token;
 }
 
-// Get site ID - try multiple approaches
-async function getSiteId(accessToken) {
-    // Try with /sites/ prefix first
-    let siteUrl = `https://graph.microsoft.com/v1.0/sites/${CONFIG.hostname}:/sites/${CONFIG.siteName}`;
+// Get all relevant site IDs to search
+async function getAllSiteIds(accessToken) {
+    const siteIds = [];
     
-    let response = await fetch(siteUrl, {
-        headers: {
-            'Authorization': `Bearer ${accessToken}`
-        }
-    });
-
-    // If that fails, try without /sites/ prefix
-    if (!response.ok) {
-        console.log('Trying root site...');
-        siteUrl = `https://graph.microsoft.com/v1.0/sites/${CONFIG.hostname}`;
-        response = await fetch(siteUrl, {
+    // Try site from config (sccr)
+    const sitesToTry = [
+        { name: CONFIG.siteName, url: `https://graph.microsoft.com/v1.0/sites/${CONFIG.hostname}:/sites/${CONFIG.siteName}` },
+        { name: 'SuniqueKnowledgeBase', url: `https://graph.microsoft.com/v1.0/sites/${CONFIG.hostname}:/sites/SuniqueKnowledgeBase` },
+        { name: 'root', url: `https://graph.microsoft.com/v1.0/sites/${CONFIG.hostname}` }
+    ];
+    
+    for (const site of sitesToTry) {
+        console.log(`Trying site: ${site.name}...`);
+        const response = await fetch(site.url, {
             headers: {
                 'Authorization': `Bearer ${accessToken}`
             }
         });
+        
+        if (response.ok) {
+            const data = await response.json();
+            console.log(`✓ Found site: ${data.name} (${data.id})`);
+            siteIds.push({ id: data.id, name: data.name, displayName: data.displayName });
+        } else {
+            console.log(`✗ Site ${site.name} not accessible: ${response.status}`);
+        }
     }
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to get site: ${response.status} - ${errorText}`);
+    
+    if (siteIds.length === 0) {
+        throw new Error('No accessible SharePoint sites found');
     }
-
-    const data = await response.json();
-    console.log('Site ID:', data.id, 'Site Name:', data.name);
-    return data.id;
+    
+    return siteIds;
 }
 
 // Try to get file by GUID using SharePoint REST API
-async function getFileByGuid(siteId) {
-    // Try to construct the web URL from the sharing link
-    const webUrl = `https://${CONFIG.hostname}/sites/${CONFIG.siteName}/_api/web/GetFileById(guid'${CONFIG.fileGuid}')/$value`;
-    console.log('Trying SharePoint REST API:', webUrl);
+async function getFileByGuid() {
+    // Try both site names
+    const sitesToTry = ['SuniqueKnowledgeBase', CONFIG.siteName, 'sccr'];
     
     // Get SharePoint-specific token
     const tokenEndpoint = `https://login.microsoftonline.com/${CONFIG.tenantId}/oauth2/v2.0/token`;
@@ -115,91 +117,108 @@ async function getFileByGuid(siteId) {
     });
 
     if (!tokenResponse.ok) {
-        throw new Error('Failed to get SharePoint token');
+        console.log('Failed to get SharePoint token');
+        return null;
     }
 
     const tokenData = await tokenResponse.json();
     const spToken = tokenData.access_token;
 
-    const response = await fetch(webUrl, {
-        headers: {
-            'Authorization': `Bearer ${spToken}`,
-            'Accept': 'application/json;odata=verbose'
-        }
-    });
+    for (const siteName of sitesToTry) {
+        const webUrl = `https://${CONFIG.hostname}/sites/${siteName}/_api/web/GetFileById(guid'${CONFIG.fileGuid}')/$value`;
+        console.log(`Trying SharePoint REST API in site: ${siteName}...`);
+        
+        const response = await fetch(webUrl, {
+            headers: {
+                'Authorization': `Bearer ${spToken}`,
+                'Accept': 'application/json;odata=verbose'
+            }
+        });
 
-    if (response.ok) {
-        console.log('File found via SharePoint REST API with GUID');
-        return await response.buffer();
+        if (response.ok) {
+            console.log(`✓ File found via SharePoint REST API in site: ${siteName}`);
+            return await response.buffer();
+        } else {
+            console.log(`  ✗ Not found in ${siteName} (${response.status})`);
+        }
     }
 
     return null;
 }
 
-// Find file by searching for its name - returns {driveId, itemId}
-async function findFile(accessToken, siteId) {
+// Find file by searching across all accessible sites
+async function findFileInAllSites(accessToken, sites) {
     const fileName = 'Assembly Schedule (New Version).xlsx';
     
-    // Try approach 1: Search in site drive
-    console.log('Searching in site drive...');
-    let searchUrl = `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/root/search(q='${encodeURIComponent(fileName)}')`;
-    
-    let response = await fetch(searchUrl, {
-        headers: {
-            'Authorization': `Bearer ${accessToken}`
-        }
-    });
-
-    if (response.ok) {
-        const data = await response.json();
-        console.log('Search results:', data.value?.length || 0, 'files found');
-        if (data.value && data.value.length > 0) {
-            const file = data.value[0];
-            console.log('File found in site drive:', file.id, 'Drive:', file.parentReference?.driveId);
-            return { driveId: file.parentReference?.driveId, itemId: file.id };
-        }
-    } else {
-        console.log('Site drive search failed:', response.status);
-    }
-
-    // Try approach 2: List all drives and search each
-    console.log('Listing all drives in site...');
-    const drivesUrl = `https://graph.microsoft.com/v1.0/sites/${siteId}/drives`;
-    response = await fetch(drivesUrl, {
-        headers: {
-            'Authorization': `Bearer ${accessToken}`
-        }
-    });
-
-    if (response.ok) {
-        const drivesData = await response.json();
-        console.log(`Found ${drivesData.value?.length || 0} drives`);
+    for (const site of sites) {
+        console.log(`\n=== Searching in site: ${site.displayName || site.name} ===`);
         
-        for (const drive of drivesData.value || []) {
-            console.log(`Searching in drive: ${drive.name} (${drive.id})`);
-            searchUrl = `https://graph.microsoft.com/v1.0/drives/${drive.id}/root/search(q='${encodeURIComponent(fileName)}')`;
-            
-            response = await fetch(searchUrl, {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`
-                }
-            });
+        // Try approach 1: Search in site drive
+        console.log('Searching in default site drive...');
+        let searchUrl = `https://graph.microsoft.com/v1.0/sites/${site.id}/drive/root/search(q='${encodeURIComponent(fileName)}')`;
+        
+        let response = await fetch(searchUrl, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
 
-            if (response.ok) {
-                const searchData = await response.json();
-                console.log(`Drive ${drive.name}: ${searchData.value?.length || 0} results`);
-                if (searchData.value && searchData.value.length > 0) {
-                    const file = searchData.value[0];
-                    console.log('File found in drive:', drive.name, '- File ID:', file.id);
-                    return { driveId: drive.id, itemId: file.id };
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Search results:', data.value?.length || 0, 'files found');
+            if (data.value && data.value.length > 0) {
+                const file = data.value[0];
+                console.log('✓ FILE FOUND in site drive!');
+                console.log('File name:', file.name);
+                console.log('File ID:', file.id);
+                return { driveId: file.parentReference?.driveId, itemId: file.id };
+            }
+        } else {
+            console.log('Site drive search failed:', response.status);
+        }
+
+        // Try approach 2: List all drives and search each
+        console.log('Listing all drives in site...');
+        const drivesUrl = `https://graph.microsoft.com/v1.0/sites/${site.id}/drives`;
+        response = await fetch(drivesUrl, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+
+        if (response.ok) {
+            const drivesData = await response.json();
+            console.log(`Found ${drivesData.value?.length || 0} drives`);
+            
+            for (const drive of drivesData.value || []) {
+                console.log(`  Searching in drive: ${drive.name}...`);
+                searchUrl = `https://graph.microsoft.com/v1.0/drives/${drive.id}/root/search(q='${encodeURIComponent(fileName)}')`;
+                
+                response = await fetch(searchUrl, {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+
+                if (response.ok) {
+                    const searchData = await response.json();
+                    if (searchData.value && searchData.value.length > 0) {
+                        const file = searchData.value[0];
+                        console.log(`  ✓ FILE FOUND in drive: ${drive.name}`);
+                        console.log('  File name:', file.name);
+                        console.log('  File ID:', file.id);
+                        return { driveId: drive.id, itemId: file.id };
+                    } else {
+                        console.log(`  Drive ${drive.name}: 0 results`);
+                    }
                 }
             }
+        } else {
+            console.log('Failed to list drives:', response.status);
         }
-    } else {
-        console.log('Failed to list drives:', response.status);
     }
 
-    throw new Error(`File "${fileName}" not found in any SharePoint drives`);
+    throw new Error(`File "${fileName}" not found in any accessible SharePoint sites`);
 }
 
 // Download Excel file using drive ID and item ID
@@ -235,28 +254,34 @@ app.get('/', (req, res) => {
 // Main endpoint to download the assembly schedule
 app.get('/api/download-schedule', async (req, res) => {
     try {
+        console.log('\n========================================');
         console.log('Fetching assembly schedule...');
+        console.log('========================================');
         
         // Step 1: Authenticate
-        console.log('Authenticating with Microsoft...');
+        console.log('\n[1/4] Authenticating with Microsoft...');
         const accessToken = await getAccessToken();
+        console.log('✓ Authentication successful');
         
-        // Step 2: Get site ID
-        console.log('Getting site ID...');
-        const siteId = await getSiteId(accessToken);
+        // Step 2: Get all accessible site IDs
+        console.log('\n[2/4] Finding SharePoint sites...');
+        const sites = await getAllSiteIds(accessToken);
+        console.log(`✓ Found ${sites.length} accessible site(s)`);
         
         // Step 3: Try to get file by GUID first (SharePoint REST API)
-        console.log('Trying to get file by GUID...');
-        let fileBuffer = await getFileByGuid(siteId);
+        console.log('\n[3/4] Trying to get file by GUID...');
+        let fileBuffer = await getFileByGuid();
         
         if (!fileBuffer) {
-            // Step 4: Fallback to searching for file
-            console.log('GUID approach failed, searching for file...');
-            const fileLocation = await findFile(accessToken, siteId);
-            console.log('File found - Drive:', fileLocation.driveId, 'Item:', fileLocation.itemId);
+            // Step 4: Fallback to searching across all sites
+            console.log('GUID approach failed, searching across all sites...');
+            const fileLocation = await findFileInAllSites(accessToken, sites);
+            console.log('\n✓ File located!');
+            console.log('  Drive ID:', fileLocation.driveId);
+            console.log('  Item ID:', fileLocation.itemId);
             
             // Step 5: Download file
-            console.log('Downloading file...');
+            console.log('\n[4/4] Downloading file...');
             fileBuffer = await downloadFile(accessToken, fileLocation.driveId, fileLocation.itemId);
         }
         
@@ -264,11 +289,13 @@ app.get('/api/download-schedule', async (req, res) => {
         res.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.send(fileBuffer);
         
-        console.log('File sent successfully');
+        console.log('\n✓ File sent successfully!');
+        console.log('========================================\n');
         
     } catch (error) {
-        console.error('Error:', error.message);
+        console.error('\n✗ Error:', error.message);
         console.error('Stack:', error.stack);
+        console.error('========================================\n');
         res.status(500).json({ 
             error: error.message,
             stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
