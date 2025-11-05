@@ -30,10 +30,11 @@ SHAREPOINT_TENANT_ID=your-tenant-id
 SHAREPOINT_CLIENT_ID=your-client-id
 SHAREPOINT_CLIENT_SECRET=your-client-secret
 SHAREPOINT_HOSTNAME=your-hostname.sharepoint.com
-SHAREPOINT_SITE_NAME=your-site-name
 ```
 
 Use the values from your `env` file (do not commit this file to git!).
+
+Note: SHAREPOINT_SITE_NAME is no longer needed as the server automatically searches in the correct site.
 
 ### 3. Get Your Railway URL
 
