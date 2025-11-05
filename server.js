@@ -16,7 +16,8 @@ const CONFIG = {
     clientId: process.env.SHAREPOINT_CLIENT_ID,
     clientSecret: process.env.SHAREPOINT_CLIENT_SECRET,
     hostname: process.env.SHAREPOINT_HOSTNAME,
-    siteName: process.env.SHAREPOINT_SITE_NAME || 'SuniqueKnowledgeBase'
+    siteName: process.env.SHAREPOINT_SITE_NAME || 'SuniqueKnowledgeBase',
+    fileGuid: '90B92EAC-A9BD-48EC-9881-F6DC23DD5B4F'
 };
 
 // Validate configuration
@@ -91,6 +92,50 @@ async function getSiteId(accessToken) {
     return data.id;
 }
 
+// Try to get file by GUID using SharePoint REST API
+async function getFileByGuid(siteId) {
+    // Try to construct the web URL from the sharing link
+    const webUrl = `https://${CONFIG.hostname}/sites/${CONFIG.siteName}/_api/web/GetFileById(guid'${CONFIG.fileGuid}')/$value`;
+    console.log('Trying SharePoint REST API:', webUrl);
+    
+    // Get SharePoint-specific token
+    const tokenEndpoint = `https://login.microsoftonline.com/${CONFIG.tenantId}/oauth2/v2.0/token`;
+    const params = new URLSearchParams();
+    params.append('client_id', CONFIG.clientId);
+    params.append('client_secret', CONFIG.clientSecret);
+    params.append('scope', `https://${CONFIG.hostname}/.default`);
+    params.append('grant_type', 'client_credentials');
+
+    const tokenResponse = await fetch(tokenEndpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: params
+    });
+
+    if (!tokenResponse.ok) {
+        throw new Error('Failed to get SharePoint token');
+    }
+
+    const tokenData = await tokenResponse.json();
+    const spToken = tokenData.access_token;
+
+    const response = await fetch(webUrl, {
+        headers: {
+            'Authorization': `Bearer ${spToken}`,
+            'Accept': 'application/json;odata=verbose'
+        }
+    });
+
+    if (response.ok) {
+        console.log('File found via SharePoint REST API with GUID');
+        return await response.buffer();
+    }
+
+    return null;
+}
+
 // Find file by searching for its name - returns {driveId, itemId}
 async function findFile(accessToken, siteId) {
     const fileName = 'Assembly Schedule (New Version).xlsx';
@@ -107,11 +152,14 @@ async function findFile(accessToken, siteId) {
 
     if (response.ok) {
         const data = await response.json();
+        console.log('Search results:', data.value?.length || 0, 'files found');
         if (data.value && data.value.length > 0) {
             const file = data.value[0];
             console.log('File found in site drive:', file.id, 'Drive:', file.parentReference?.driveId);
             return { driveId: file.parentReference?.driveId, itemId: file.id };
         }
+    } else {
+        console.log('Site drive search failed:', response.status);
     }
 
     // Try approach 2: List all drives and search each
@@ -139,6 +187,7 @@ async function findFile(accessToken, siteId) {
 
             if (response.ok) {
                 const searchData = await response.json();
+                console.log(`Drive ${drive.name}: ${searchData.value?.length || 0} results`);
                 if (searchData.value && searchData.value.length > 0) {
                     const file = searchData.value[0];
                     console.log('File found in drive:', drive.name, '- File ID:', file.id);
@@ -146,6 +195,8 @@ async function findFile(accessToken, siteId) {
                 }
             }
         }
+    } else {
+        console.log('Failed to list drives:', response.status);
     }
 
     throw new Error(`File "${fileName}" not found in any SharePoint drives`);
@@ -194,14 +245,20 @@ app.get('/api/download-schedule', async (req, res) => {
         console.log('Getting site ID...');
         const siteId = await getSiteId(accessToken);
         
-        // Step 3: Find file
-        console.log('Searching for file...');
-        const fileLocation = await findFile(accessToken, siteId);
-        console.log('File found - Drive:', fileLocation.driveId, 'Item:', fileLocation.itemId);
+        // Step 3: Try to get file by GUID first (SharePoint REST API)
+        console.log('Trying to get file by GUID...');
+        let fileBuffer = await getFileByGuid(siteId);
         
-        // Step 4: Download file
-        console.log('Downloading file...');
-        const fileBuffer = await downloadFile(accessToken, fileLocation.driveId, fileLocation.itemId);
+        if (!fileBuffer) {
+            // Step 4: Fallback to searching for file
+            console.log('GUID approach failed, searching for file...');
+            const fileLocation = await findFile(accessToken, siteId);
+            console.log('File found - Drive:', fileLocation.driveId, 'Item:', fileLocation.itemId);
+            
+            // Step 5: Download file
+            console.log('Downloading file...');
+            fileBuffer = await downloadFile(accessToken, fileLocation.driveId, fileLocation.itemId);
+        }
         
         // Send the file as binary data
         res.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -211,6 +268,7 @@ app.get('/api/download-schedule', async (req, res) => {
         
     } catch (error) {
         console.error('Error:', error.message);
+        console.error('Stack:', error.stack);
         res.status(500).json({ 
             error: error.message,
             stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
