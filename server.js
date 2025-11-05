@@ -40,7 +40,7 @@ async function getAccessToken() {
     const params = new URLSearchParams();
     params.append('client_id', CONFIG.clientId);
     params.append('client_secret', CONFIG.clientSecret);
-    params.append('scope', `https://${CONFIG.hostname}/.default`);
+    params.append('scope', 'https://graph.microsoft.com/.default');
     params.append('grant_type', 'client_credentials');
 
     const response = await fetch(tokenEndpoint, {
