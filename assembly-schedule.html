@@ -62,6 +62,13 @@
             opacity: 0.9;
         }
 
+        .header-right {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 15px;
+        }
+
         .stats {
             font-size: 32px;
             font-weight: 700;
@@ -69,6 +76,61 @@
             padding: 15px 30px;
             border-radius: 50px;
             backdrop-filter: blur(10px);
+        }
+
+        .refresh-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .last-updated {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+        }
+
+        .refresh-button {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 20px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .refresh-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
+        }
+
+        .refresh-button:active {
+            transform: translateY(0);
+        }
+
+        .refresh-button.loading {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .refresh-icon {
+            font-size: 24px;
+        }
+
+        .refresh-button.loading .refresh-icon {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
 
         /* Loading State */
@@ -280,7 +342,16 @@
                     <div class="date" id="currentDate"></div>
                 </div>
             </div>
-            <div class="stats" id="stats"></div>
+            <div class="header-right">
+                <div class="stats" id="stats"></div>
+                <div class="refresh-section">
+                    <div class="last-updated" id="lastUpdated">Last updated: --</div>
+                    <button class="refresh-button" id="refreshButton" onclick="refreshData()">
+                        <span class="refresh-icon">↻</span>
+                        <span>Refresh</span>
+                    </button>
+                </div>
+            </div>
         </div>
         
         <div class="loading" id="loading">
@@ -503,6 +574,18 @@
             document.getElementById('loading').innerHTML = `<div class="error">Error: ${message}</div>`;
         }
 
+        // Update last updated time
+        function updateLastUpdatedTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true 
+            });
+            document.getElementById('lastUpdated').textContent = `Last updated: ${timeString}`;
+        }
+
         // Main execution
         async function main() {
             displayCurrentDate();
@@ -517,9 +600,37 @@
                 // Step 3: Display filtered data
                 displayData(data);
 
+                // Step 4: Update last updated time
+                updateLastUpdatedTime();
+
             } catch (error) {
                 console.error('Error:', error);
                 showError(error.message);
+            }
+        }
+
+        // Refresh function for manual refresh button
+        async function refreshData() {
+            const refreshButton = document.getElementById('refreshButton');
+            const refreshIcon = refreshButton.querySelector('.refresh-icon');
+            
+            // Disable button and show loading state
+            refreshButton.classList.add('loading');
+            refreshButton.disabled = true;
+
+            try {
+                // Download fresh data
+                const fileData = await downloadFile();
+                const data = parseExcel(fileData);
+                displayData(data);
+                updateLastUpdatedTime();
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to refresh data: ' + error.message);
+            } finally {
+                // Re-enable button
+                refreshButton.classList.remove('loading');
+                refreshButton.disabled = false;
             }
         }
 
