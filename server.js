@@ -16,8 +16,7 @@ const CONFIG = {
     clientId: process.env.SHAREPOINT_CLIENT_ID,
     clientSecret: process.env.SHAREPOINT_CLIENT_SECRET,
     hostname: process.env.SHAREPOINT_HOSTNAME,
-    siteName: process.env.SHAREPOINT_SITE_NAME || 'SuniqueKnowledgeBase',
-    fileId: '90B92EAC-A9BD-48EC-9881-F6DC23DD5B4F'
+    siteName: process.env.SHAREPOINT_SITE_NAME || 'SuniqueKnowledgeBase'
 };
 
 // Validate configuration
@@ -79,9 +78,35 @@ async function getSiteId(accessToken) {
     return data.id;
 }
 
+// Find file by searching for its name
+async function findFile(accessToken, siteId) {
+    const fileName = 'Assembly Schedule (New Version).xlsx';
+    const searchUrl = `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/root/search(q='${encodeURIComponent(fileName)}')`;
+    
+    const response = await fetch(searchUrl, {
+        headers: {
+            'Authorization': `Bearer ${accessToken}`
+        }
+    });
+
+    if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Failed to search for file: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    
+    if (!data.value || data.value.length === 0) {
+        throw new Error(`File "${fileName}" not found in SharePoint`);
+    }
+
+    // Return the first match
+    return data.value[0].id;
+}
+
 // Download Excel file
-async function downloadFile(accessToken, siteId) {
-    const fileUrl = `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${CONFIG.fileId}/content`;
+async function downloadFile(accessToken, siteId, fileId) {
+    const fileUrl = `https://graph.microsoft.com/v1.0/sites/${siteId}/drive/items/${fileId}/content`;
     
     const response = await fetch(fileUrl, {
         headers: {
@@ -122,9 +147,14 @@ app.get('/api/download-schedule', async (req, res) => {
         console.log('Getting site ID...');
         const siteId = await getSiteId(accessToken);
         
-        // Step 3: Download file
+        // Step 3: Find file
+        console.log('Searching for file...');
+        const fileId = await findFile(accessToken, siteId);
+        console.log('File found:', fileId);
+        
+        // Step 4: Download file
         console.log('Downloading file...');
-        const fileBuffer = await downloadFile(accessToken, siteId);
+        const fileBuffer = await downloadFile(accessToken, siteId, fileId);
         
         // Send the file as binary data
         res.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
