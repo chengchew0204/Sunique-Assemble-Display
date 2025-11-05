@@ -206,16 +206,43 @@
                 return;
             }
 
-            // First row is headers
-            const headers = data[0];
-            const rows = data.slice(1);
+            console.log('First 10 rows of data:', data.slice(0, 10));
+
+            // Find the header row (look for row containing "Date" column)
+            let headerRowIndex = -1;
+            let headers = null;
+            
+            for (let i = 0; i < Math.min(20, data.length); i++) {
+                const row = data[i];
+                // Check if this row contains typical header keywords
+                const hasDate = row.some(cell => cell && cell.toString().toLowerCase().trim() === 'date');
+                const hasDay = row.some(cell => cell && cell.toString().toLowerCase().trim() === 'day');
+                
+                if (hasDate && hasDay) {
+                    headerRowIndex = i;
+                    headers = row;
+                    console.log(`Found header row at index ${i}:`, headers);
+                    break;
+                }
+            }
+
+            if (headerRowIndex === -1 || !headers) {
+                showNoData('Could not find header row in Excel file');
+                return;
+            }
+
+            // Get all rows after the header row, filter out empty rows
+            const rows = data.slice(headerRowIndex + 1).filter(row => {
+                // Keep rows that have at least one non-empty cell
+                return row.some(cell => cell !== null && cell !== undefined && cell !== '');
+            });
 
             console.log('Headers:', headers);
-            console.log('Total rows:', rows.length);
+            console.log('Data rows (after filtering empty):', rows.length);
 
             // Find column indices
-            const dateIdx = headers.findIndex(h => h && h.toString().toLowerCase().includes('date'));
-            const dayIdx = headers.findIndex(h => h && h.toString().toLowerCase().includes('day'));
+            const dateIdx = headers.findIndex(h => h && h.toString().toLowerCase().trim() === 'date');
+            const dayIdx = headers.findIndex(h => h && h.toString().toLowerCase().trim() === 'day');
             const orderIdx = headers.findIndex(h => h && h.toString().toLowerCase().includes('order'));
             const customerIdx = headers.findIndex(h => h && h.toString().toLowerCase().includes('customer'));
             const cabinetQtyIdx = headers.findIndex(h => h && (h.toString().toLowerCase().includes('cabinet') && h.toString().toLowerCase().includes('qty')));
@@ -229,10 +256,17 @@
             console.log('Today:', today.toDateString());
 
             // Filter rows for today
+            let logCount = 0;
             const todaysOrders = rows.filter(row => {
                 const dateValue = row[dateIdx];
                 const parsedDate = parseDate(dateValue);
-                console.log('Row date value:', dateValue, '-> Parsed:', parsedDate?.toDateString(), '-> Match:', parsedDate && isSameDay(parsedDate, today));
+                
+                // Only log first 5 rows to avoid console spam
+                if (logCount < 5) {
+                    console.log('Row date value:', dateValue, '-> Parsed:', parsedDate?.toDateString(), '-> Match:', parsedDate && isSameDay(parsedDate, today));
+                    logCount++;
+                }
+                
                 return parsedDate && isSameDay(parsedDate, today);
             });
 
