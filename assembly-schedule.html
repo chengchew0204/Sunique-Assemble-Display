@@ -17,6 +17,7 @@
             background: linear-gradient(135deg, #3d4528 0%, #515a36 100%);
             color: #ffffff;
             padding: 20px;
+            padding-bottom: 115px;
             line-height: 1.3;
             min-height: 100vh;
         }
@@ -86,44 +87,63 @@
         }
 
         .refresh-button {
-            display: none !important;
+            box-sizing: border-box;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            height: 48px;           /* total height = 48px */
+            min-width: 140px;       /* prevent width changes */
+            width: max-content;     /* fit content naturally */
+            padding: 0 16px;        /* no vertical padding */
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            transition: box-shadow .2s ease, opacity .2s ease;
+            flex-shrink: 0;
+            overflow: hidden;       /* contain any overflow from rotation */
+            contain: layout style;  /* isolate layout calculations */
         }
 
         .refresh-button:hover:not(.loading) {
-            transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5);
         }
 
         .refresh-button:active:not(.loading) {
-            transform: translateY(0); 
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
         }
 
         .refresh-button.loading {
             opacity: 0.7;
             cursor: not-allowed;
-            transform: none !important;
         }
 
         .refresh-icon {
-            font-size: 20px;
-            display: inline-block;
-            line-height: 1;
             width: 20px;
             height: 20px;
-            flex-shrink: 0;
+            font-size: 20px;        /* ensure consistent icon size */
+            flex: 0 0 20px;         /* lock size, prevent flex growing */
+            display: inline-block;  /* better centering than block */
+            line-height: 1;
+            text-align: center;     /* center the icon character */
+            vertical-align: middle; /* prevent baseline shifts */
         }
 
         .refresh-button.loading .refresh-icon {
             animation: spin 1s linear infinite;
+            transform-origin: 50% 50%;
+            will-change: transform; /* hint browser for GPU acceleration */
         }
 
         .refresh-button span {
             display: inline-flex;
             align-items: center;
-            justify-content: center;
             line-height: 1;
             white-space: nowrap;
-            height: 100%;
             flex-shrink: 0;
         }
 
@@ -133,14 +153,14 @@
         }
 
         /* Loading State */
-        .loading {
+        #loading {
             text-align: center;
             padding: 100px 20px;
             font-size: 36px;
             color: #ffffff;
         }
 
-        .loading::after {
+        #loading::after {
             content: '...';
             animation: dots 1.5s infinite;
         }
@@ -163,8 +183,8 @@
         table {
             width: 100%;
             border-collapse: separate;
-            border-spacing: 0 8px;
-            font-size: 20px;
+            border-spacing: 0 20px;
+            font-size: 72px;
         }
 
         thead {
@@ -174,14 +194,15 @@
         }
 
         th {
-            text-align: left;
+            text-align: center;
             font-weight: 700;
-            padding: 12px 18px;
+            padding: 30px 40px;
             background: #515a36;
             color: #ffffff;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-size: 18px;
+            letter-spacing: 2px;
+            font-size: 48px;
+            width: 50%;
         }
 
         th:first-child {
@@ -194,26 +215,27 @@
 
         /* Status-based row colors */
         tbody tr {
-            background: rgba(255, 255, 255, 0.95);
-            color: #000000;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
             border-radius: 10px;
             overflow: hidden;
         }
 
         tbody tr.row-assembling {
-            background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-            border-left: 6px solid #10b981;
+            background: #10b981;
+            color: #ffffff;
+            border-left: 8px solid #059669;
         }
 
         tbody tr.row-scheduled {
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-            border-left: 6px solid #f59e0b;
+            background: #fbbf24;
+            color: #000000;
+            border-left: 8px solid #f59e0b;
         }
 
         tbody tr.row-finished {
-            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-            border-left: 6px solid #6b7280;
+            background: #9ca3af;
+            color: #ffffff;
+            border-left: 8px solid #6b7280;
         }
 
         tbody tr:hover {
@@ -234,9 +256,11 @@
         }
 
         td {
-            padding: 15px 18px;
-            font-weight: 600;
-            font-size: 20px;
+            padding: 40px 40px;
+            font-weight: 700;
+            font-size: 72px;
+            text-align: center;
+            width: 50%;
         }
 
         tbody tr td:first-child {
@@ -317,17 +341,143 @@
         @media (max-width: 1920px) {
             .title-section h1 { font-size: 34px; }
             .date { font-size: 18px; }
-            table { font-size: 19px; }
-            td { font-size: 19px; }
-            .status-badge { font-size: 17px; min-width: 140px; }
+            th { font-size: 42px; padding: 28px 35px; }
+            table { font-size: 64px; }
+            td { font-size: 64px; padding: 35px 35px; }
         }
 
         @media (max-width: 1366px) {
             .title-section h1 { font-size: 30px; }
             .date { font-size: 16px; }
-            table { font-size: 17px; }
-            td { font-size: 17px; }
-            .status-badge { font-size: 15px; min-width: 130px; }
+            th { font-size: 36px; padding: 25px 30px; }
+            table { font-size: 56px; }
+            td { font-size: 56px; padding: 30px 30px; }
+        }
+
+        /* Progress Summary */
+        .progress-summary {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px 30px;
+            background: rgba(61, 69, 40, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            height: 75px;
+            z-index: 100;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .progress-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .progress-bar-container {
+            position: relative;
+            flex-grow: 1;
+            height: 50px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .progress-stats {
+            display: flex;
+            gap: 30px;
+            flex-shrink: 0;
+        }
+
+        .progress-stat {
+            text-align: center;
+        }
+
+        .progress-stat-value {
+            font-size: 32px;
+            font-weight: 900;
+            color: #ffffff;
+            display: block;
+        }
+
+        .progress-stat-label {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981 0%, #059669 50%, #10b981 100%);
+            background-size: 200% 100%;
+            border-radius: 25px;
+            transition: width 1s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 20px;
+            animation: shimmer 2s infinite;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .progress-percentage {
+            font-size: 24px;
+            font-weight: 900;
+            color: #ffffff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            white-space: nowrap;
+        }
+
+        .progress-bar-fill[style*="width: 100%"] {
+            background: linear-gradient(90deg, #10b981 0%, #34d399 50%, #10b981 100%);
+        }
+
+        @media (max-width: 1920px) {
+            .progress-title { font-size: 22px; }
+            .progress-stat-value { font-size: 28px; }
+            .progress-stat-label { font-size: 13px; }
+            .progress-percentage { font-size: 22px; }
+            .progress-bar-container { height: 45px; }
+        }
+
+        @media (max-width: 1366px) {
+            .progress-summary { 
+                flex-direction: column; 
+                align-items: stretch; 
+                gap: 15px;
+                height: auto;
+                padding: 15px 30px;
+            }
+            .progress-title { 
+                font-size: 18px; 
+                text-align: center;
+                order: 1;
+            }
+            .progress-bar-container { 
+                height: 40px;
+                order: 2;
+            }
+            .progress-stats { 
+                justify-content: center;
+                order: 3;
+            }
+            .progress-stat-value { font-size: 24px; }
+            .progress-stat-label { font-size: 12px; }
+            .progress-percentage { font-size: 20px; }
         }
     </style>
 </head>
@@ -359,6 +509,24 @@
 
         <div id="content">
             <div id="tableContainer"></div>
+            <div class="progress-summary" id="progressSummary">
+                <div class="progress-title">Assembly Progress</div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="progressBarFill" style="width: 0%;">
+                        <span class="progress-percentage" id="progressPercentage">0%</span>
+                    </div>
+                </div>
+                <div class="progress-stats">
+                    <div class="progress-stat">
+                        <span class="progress-stat-value" id="finishedCabinets">0</span>
+                        <span class="progress-stat-label">Finished</span>
+                    </div>
+                    <div class="progress-stat">
+                        <span class="progress-stat-value" id="totalCabinets">0</span>
+                        <span class="progress-stat-label">Total Today</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -509,6 +677,22 @@
                 return;
             }
 
+            // Sort orders by status: Assembling -> Scheduled -> Finished
+            todaysOrders.sort((a, b) => {
+                const statusA = (a[statusIdx] || '').toString().toLowerCase();
+                const statusB = (b[statusIdx] || '').toString().toLowerCase();
+                
+                // Assign priority (lower number = higher priority)
+                const getPriority = (status) => {
+                    if (status.includes('assembling')) return 1;
+                    if (status.includes('scheduled')) return 2;
+                    if (status.includes('finished')) return 3;
+                    return 4; // Unknown statuses go to the end
+                };
+                
+                return getPriority(statusA) - getPriority(statusB);
+            });
+
             // Helper function to get status badge class
             function getStatusClass(status) {
                 if (!status) return '';
@@ -523,16 +707,11 @@
             let tableHTML = '<table>';
             tableHTML += '<thead><tr>';
             tableHTML += '<th>Order #</th>';
-            tableHTML += '<th>Customer</th>';
             tableHTML += '<th>Cabinet Qty</th>';
-            tableHTML += '<th>Warehouse</th>';
-            tableHTML += '<th>Status</th>';
             tableHTML += '</tr></thead><tbody>';
 
             todaysOrders.forEach(row => {
                 const status = row[statusIdx] || '';
-                const warehouse = row[warehouseIdx] || '';
-                const statusClass = getStatusClass(status);
                 
                 // Get row class based on status
                 let rowClass = '';
@@ -543,17 +722,47 @@
                 
                 tableHTML += `<tr class="${rowClass}">`;
                 tableHTML += `<td><strong>${row[orderIdx] || ''}</strong></td>`;
-                tableHTML += `<td>${row[customerIdx] || ''}</td>`;
                 tableHTML += `<td><strong>${row[cabinetQtyIdx] || ''}</strong></td>`;
-                tableHTML += `<td class="warehouse-value">${warehouse}</td>`;
-                tableHTML += `<td><span class="status-badge ${statusClass}">${status}</span></td>`;
                 tableHTML += '</tr>';
             });
 
             tableHTML += '</tbody></table>';
 
             document.getElementById('tableContainer').innerHTML = tableHTML;
+            
+            // Calculate and display progress
+            updateProgress(todaysOrders, cabinetQtyIdx, statusIdx);
+            
             showContent();
+        }
+
+        // Calculate and update progress bar
+        function updateProgress(orders, cabinetQtyIdx, statusIdx) {
+            let totalCabinets = 0;
+            let finishedCabinets = 0;
+
+            orders.forEach(row => {
+                const cabinetQty = parseInt(row[cabinetQtyIdx]) || 0;
+                const status = (row[statusIdx] || '').toString().toLowerCase();
+                
+                totalCabinets += cabinetQty;
+                
+                if (status.includes('finished')) {
+                    finishedCabinets += cabinetQty;
+                }
+            });
+
+            const percentage = totalCabinets > 0 ? Math.round((finishedCabinets / totalCabinets) * 100) : 0;
+
+            // Update DOM elements
+            document.getElementById('finishedCabinets').textContent = finishedCabinets;
+            document.getElementById('totalCabinets').textContent = totalCabinets;
+            document.getElementById('progressPercentage').textContent = `${percentage}%`;
+            
+            // Animate progress bar
+            setTimeout(() => {
+                document.getElementById('progressBarFill').style.width = `${percentage}%`;
+            }, 100);
         }
 
         function showNoData(message) {
@@ -630,9 +839,30 @@
             }
         }
 
+        // Auto-refresh mechanism - refreshes every 5 minutes
+        let autoRefreshInterval = null;
+
+        function startAutoRefresh() {
+            // Clear any existing interval
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+            
+            // Set up auto-refresh every 5 minutes (300000 milliseconds)
+            autoRefreshInterval = setInterval(async () => {
+                console.log('Auto-refreshing data...');
+                await refreshData();
+            }, 300000); // 5 minutes = 5 * 60 * 1000 = 300000 ms
+            
+            console.log('Auto-refresh enabled: will refresh every 5 minutes');
+        }
+
         // Run on page load
-        window.addEventListener('DOMContentLoaded', main);
+        window.addEventListener('DOMContentLoaded', async () => {
+            await main();
+            // Start auto-refresh after initial load
+            startAutoRefresh();
+        });
     </script>
 </body>
 </html>
-
