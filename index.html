@@ -235,6 +235,7 @@
             background: #e9903a;
             color: #ffffff;
             border-left: 8px solid #c97527;
+            animation: assembling-pulse 2s ease-in-out infinite;
         }
 
         tbody tr.row-scheduled {
@@ -331,6 +332,17 @@
             50% {
                 transform: scale(1.05);
                 box-shadow: 0 6px 25px rgba(16, 185, 129, 0.6);
+            }
+        }
+
+        @keyframes assembling-pulse {
+            0%, 100% {
+                box-shadow: 0 0 20px rgba(233, 144, 58, 0.4), 0 0 40px rgba(233, 144, 58, 0.2);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(233, 144, 58, 0.8), 0 0 60px rgba(233, 144, 58, 0.4);
+                transform: scale(1.02);
             }
         }
 
