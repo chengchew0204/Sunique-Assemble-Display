@@ -202,7 +202,18 @@
             text-transform: uppercase;
             letter-spacing: 2px;
             font-size: 48px;
-            width: 50%;
+        }
+        
+        th:nth-child(1) {
+            width: 35%;
+        }
+        
+        th:nth-child(2) {
+            width: 30%;
+        }
+        
+        th:nth-child(3) {
+            width: 35%;
         }
 
         th:first-child {
@@ -221,21 +232,21 @@
         }
 
         tbody tr.row-assembling {
-            background: #10b981;
+            background: #e9903a;
             color: #ffffff;
-            border-left: 8px solid #059669;
+            border-left: 8px solid #c97527;
         }
 
         tbody tr.row-scheduled {
-            background: #fbbf24;
+            background: #fffc54;
             color: #000000;
-            border-left: 8px solid #f59e0b;
+            border-left: 8px solid #e6d614;
         }
 
         tbody tr.row-finished {
-            background: #9ca3af;
+            background: #357d22;
             color: #ffffff;
-            border-left: 8px solid #6b7280;
+            border-left: 8px solid #275e18;
         }
 
         tbody tr:hover {
@@ -260,7 +271,18 @@
             font-weight: 700;
             font-size: 72px;
             text-align: center;
-            width: 50%;
+        }
+        
+        td:nth-child(1) {
+            width: 35%;
+        }
+        
+        td:nth-child(2) {
+            width: 30%;
+        }
+        
+        td:nth-child(3) {
+            width: 35%;
         }
 
         tbody tr td:first-child {
@@ -707,6 +729,7 @@
             let tableHTML = '<table>';
             tableHTML += '<thead><tr>';
             tableHTML += '<th>Order #</th>';
+            tableHTML += '<th>Status</th>';
             tableHTML += '<th>Cabinet Qty</th>';
             tableHTML += '</tr></thead><tbody>';
 
@@ -722,6 +745,7 @@
                 
                 tableHTML += `<tr class="${rowClass}">`;
                 tableHTML += `<td><strong>${row[orderIdx] || ''}</strong></td>`;
+                tableHTML += `<td><strong>${status}</strong></td>`;
                 tableHTML += `<td><strong>${row[cabinetQtyIdx] || ''}</strong></td>`;
                 tableHTML += '</tr>';
             });
