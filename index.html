@@ -192,7 +192,7 @@
             top: 0;
             z-index: 10;
         }
-
+        
         th {
             text-align: center;
             font-weight: 700;
@@ -590,8 +590,15 @@
         // Parse Excel file
         function parseExcel(arrayBuffer) {
             const workbook = XLSX.read(arrayBuffer, { type: 'array', cellDates: true });
-            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            const data = XLSX.utils.sheet_to_json(firstSheet, { header: 1, raw: false, dateNF: 'mm/dd/yyyy' });
+            
+            // Look for the "2045 Warehouse" sheet
+            const sheetName = '2045 Warehouse';
+            if (!workbook.SheetNames.includes(sheetName)) {
+                throw new Error(`Sheet "${sheetName}" not found in Excel file. Available sheets: ${workbook.SheetNames.join(', ')}`);
+            }
+            
+            const sheet = workbook.Sheets[sheetName];
+            const data = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, dateNF: 'mm/dd/yyyy' });
             return data;
         }
 
@@ -659,42 +666,30 @@
                 return;
             }
 
-            // Find the header row (look for row containing "Date" column)
-            let headerRowIndex = -1;
-            let headers = null;
+            // Headers are at row 6 (index 5 in 0-based array)
+            // A6: Date, B6: Day, C6: Order #, D6: Customer, E6: Cabinet Qty, F6: Status
+            const headerRowIndex = 5;
             
-            for (let i = 0; i < Math.min(20, data.length); i++) {
-                const row = data[i];
-                // Check if this row contains typical header keywords
-                const hasDate = row.some(cell => cell && cell.toString().toLowerCase().trim() === 'date');
-                const hasDay = row.some(cell => cell && cell.toString().toLowerCase().trim() === 'day');
-                
-                if (hasDate && hasDay) {
-                    headerRowIndex = i;
-                    headers = row;
-                    break;
-                }
-            }
-
-            if (headerRowIndex === -1 || !headers) {
-                showNoData('Could not find header row in Excel file');
+            if (data.length <= headerRowIndex) {
+                showNoData('Excel file does not have enough rows (headers expected at row 6)');
                 return;
             }
 
-            // Get all rows after the header row, filter out empty rows
+            const headers = data[headerRowIndex];
+
+            // Get all rows after the header row (starting from row 7), filter out empty rows
             const rows = data.slice(headerRowIndex + 1).filter(row => {
                 // Keep rows that have at least one non-empty cell
                 return row.some(cell => cell !== null && cell !== undefined && cell !== '');
             });
 
-            // Find column indices
-            const dateIdx = headers.findIndex(h => h && h.toString().toLowerCase().trim() === 'date');
-            const dayIdx = headers.findIndex(h => h && h.toString().toLowerCase().trim() === 'day');
-            const orderIdx = headers.findIndex(h => h && h.toString().toLowerCase().includes('order'));
-            const customerIdx = headers.findIndex(h => h && h.toString().toLowerCase().includes('customer'));
-            const cabinetQtyIdx = headers.findIndex(h => h && (h.toString().toLowerCase().includes('cabinet') && h.toString().toLowerCase().includes('qty')));
-            const warehouseIdx = headers.findIndex(h => h && h.toString().toLowerCase().includes('warehouse'));
-            const statusIdx = headers.findIndex(h => h && h.toString().toLowerCase().includes('status'));
+            // Column indices based on known positions (A=0, B=1, C=2, D=3, E=4, F=5)
+            const dateIdx = 0;        // Column A
+            const dayIdx = 1;         // Column B
+            const orderIdx = 2;       // Column C
+            const customerIdx = 3;    // Column D
+            const cabinetQtyIdx = 4;  // Column E
+            const statusIdx = 5;      // Column F
 
             const today = new Date();
             today.setHours(0, 0, 0, 0);

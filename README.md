@@ -35,6 +35,22 @@ The proxy server avoids CORS issues and keeps credentials secure.
 - High contrast design with gradient backgrounds
 - Glassmorphism effects for modern look
 
+## Excel File Structure
+
+**File Name:** Assembly Schedule (New Version).xlsx  
+**Sheet Name:** 2045 Warehouse  
+**Header Row:** Row 6  
+**Data Starts:** Row 7
+
+| Column | Cell | Header Name | Purpose |
+|--------|------|-------------|---------|
+| A | A6 | Date | Schedule date for filtering today's orders |
+| B | B6 | Day | Day of the week |
+| C | C6 | Order # | Order number (displayed on TV) |
+| D | D6 | Customer | Customer name |
+| E | E6 | Cabinet Qty | Number of cabinets to assemble |
+| F | F6 | Status | Current status: "Assembling", "Scheduled", or "Finished" |
+
 ## Deployment Instructions
 
 ### 1. Deploy Server to Railway
